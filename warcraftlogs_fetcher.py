@@ -43,17 +43,12 @@ def fetch_fights_data(report_code, token):
 
 def fetch_events_data(report_code, fight_id, start, end, ability_id, event_type, token):
     query = """
-    query ($code: String!, $fightID: Int!, $start: Int!, $end: Int!, $abilityID: Int!, $eventType: DataType!) {
+    query ($code: String!, $start: Float, $end: Float, $abilityID: Float, $dataType: EventDataType) {
       reportData {
         report(code: $code) {
-          events(
-            fightIDs: [$fightID]
-            startTime: $start
-            endTime: $end
-            abilityID: $abilityID
-            dataType: $eventType
-          ) {
-            data
+          events(startTime: $start, endTime: $end, abilityID: $abilityID, dataType: $dataType) {
+            data,
+            nextPageTimestamp
           }
         }
       }
@@ -61,18 +56,20 @@ def fetch_events_data(report_code, fight_id, start, end, ability_id, event_type,
     """
     variables = {
         "code": report_code,
-        "fightID": fight_id,
         "start": start,
         "end": end,
         "abilityID": ability_id,
-        "eventType": event_type
+        "dataType": event_type
     }
     headers = {"Authorization": f"Bearer {token}"}
-    print("Query:", query)
-    print("Variables:", variables)
     response = requests.post(API_URL, json={'query': query, 'variables': variables}, headers=headers)
     response.raise_for_status()
-    return response.json()['data']['reportData']['report']['events']['data']
+    data = response.json()['data']['reportData']['report']['events']
+    nextPageTimestamp = data.get('nextPageTimestamp')
+    if nextPageTimestamp is not None:
+        nextPage_data = fetch_events_data(report_code, fight_id, nextPageTimestamp, end, ability_id, event_type, token)
+        data['data'].extend(nextPage_data)
+    return data['data']
 
 def calculate_feral_apex_procs(fight_data, code, token):
     os.makedirs('data_json', exist_ok=True)
@@ -91,8 +88,44 @@ def calculate_feral_apex_procs(fight_data, code, token):
                 if event.get('type') in ('applybuff', 'refreshbuff')
             ) if apex_procs else 0
             rip_ticks_count = len(rip_ticks) if rip_ticks else 0
-            apex_index = rip_ticks_count / apex_procs_count if apex_procs_count > 0 else 0
+            apex_index = apex_procs_count / rip_ticks_count if rip_ticks_count > 0 else 0
             print(f"Feral Apex procs for fight {fight_id}: {apex_procs_count}, Rip ticks: {rip_ticks_count}, Apex Index: {apex_index:.2f}")
+
+def get_report_codes_by_class_spec_rank(class_name, spec_name, rank, token, limit=5):
+  """
+  Fetch report codes for a given class, spec, and rank.
+  """
+  query = """
+  query ($className: String!, $specName: String!, $rank: Int!, $limit: Int!) {
+    rankings(
+    encounterID: 0
+    className: $className
+    specName: $specName
+    limit: $limit
+    ) {
+    rankings {
+      report {
+      code
+      }
+      rank
+    }
+    }
+  }
+  """
+  variables = {
+    "className": class_name,
+    "specName": spec_name,
+    "rank": rank,
+    "limit": limit
+  }
+  headers = {"Authorization": f"Bearer {token}"}
+  response = requests.post(API_URL, json={'query': query, 'variables': variables}, headers=headers)
+  response.raise_for_status()
+  data = response.json()
+  rankings = data.get('data', {}).get('rankings', {}).get('rankings', [])
+  # Filter by rank if needed
+  filtered = [r['report']['code'] for r in rankings if r.get('rank') == rank]
+  return filtered
 
 def main():
     parser = argparse.ArgumentParser(description='Fetch Warcraft Logs data for a specific report (API v2).')

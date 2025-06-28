@@ -1,4 +1,0 @@
-{
-  "schema": "https://www.warcraftlogs.com/api/v2/client",
-  "documents": "src/**/*.graphql"
-}
