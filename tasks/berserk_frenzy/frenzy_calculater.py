@@ -1,5 +1,8 @@
 import json
 import os
+from utils import catcher, api
+
+token = api.get_access_token()
 
 home_dir = os.getenv("CURRENT_DIR", os.path.expanduser("~"))
 
@@ -22,7 +25,7 @@ def load_top_feral_apex_data(file_path=f'{home_dir}/data_json/top_ferals.json'):
         print(f"Error decoding JSON from file: {file_path}")
         return {}
     
-def frenzy_calculaor(report_code, fight_id):
+def frenzy_calculaor(report_code, fight_ids):
     """
     Calculate the total frenzy damage for a given report code and fight ID.
     
@@ -30,12 +33,17 @@ def frenzy_calculaor(report_code, fight_id):
     :param fight_id: The ID of the fight.
     :return: Total frenzy damage.
     """
-    # Placeholder for actual calculation logic
-    # This should interact with an API or database to fetch the data
-    # For now, we return a dummy value
-    return 1000.0  # Example value, replace with actual calculation logic
+    events = catcher.events_data(
+        report_code=report_code,
+        fight_ids=fight_ids,
+        ability_id=391140,  # Frenzy ability ID
+        event_type='DamageDone',
+        token=token
+        )
+    total_frenzy_damage = sum(event['amount'] for event in events if 'amount' in event)
+    return total_frenzy_damage
 
-def berserk_calculator(report_code, fight_id):
+def berserk_calculator(report_code, fight_ids):
     """
     Calculate the total berserk damage for a given report code and fight ID.
     
@@ -43,10 +51,18 @@ def berserk_calculator(report_code, fight_id):
     :param fight_id: The ID of the fight.
     :return: Total berserk damage.
     """
-    # Placeholder for actual calculation logic
-    # This should interact with an API or database to fetch the data
-    # For now, we return a dummy value
-    return 5  # Example value, replace with actual calculation logic
+    events = catcher.events_data(
+        report_code=report_code,
+        fight_ids=fight_ids,
+        ability_id=106951,  # Berserk ability ID
+        event_type='Buffs',
+        token=token
+        )
+    cast_amount = sum(
+            1 for event in events
+            if event.get('type') in ('applybuff')
+        ) if events else 0
+    return cast_amount
     
 def frenzy_per_berserk(report_code, fight_id):
     accumulated_frenzy_damage = frenzy_calculaor(report_code, fight_id)
@@ -55,30 +71,7 @@ def frenzy_per_berserk(report_code, fight_id):
         return accumulated_frenzy_damage / berserk_amount
     else:
         return 0.0
-    
-def fights_parser(encounters):
-    """
-    Parse the encounters to extract fights codes and region and encounter names.
-    
-    :param encounters: List of encounter data.
-    :return: Dictionary mapping fight to their details.
-    """
-    fights = []
-    for encounter in encounters:
-        fight_name = encounter['name']
-        for player in encounter['characterRankings']['rankings']:
-            fight_code = player['report']['code']
-            fight_id = player['report']['fightID']
-            region = player['server']['region']
-            name = player['name']
-            apex_index = frenzy_per_berserk(fight_code, fight_id)
-            fights.append({
-                'fight_name': fight_name,
-                'report_code': fight_code,
-                'region': region,
-                'name': name,
-                'apex_index': apex_index,
-                'fight': fight_id
-            })
-            print(f"Processed fight: {fight_name}, Code: {fight_code}, Fight ID: {fight_id}, Region: {region}, Name: {name}, Apex Index: {apex_index:.2f}")
-    return fights
+
+if __name__ == "__main__":
+    # test
+    print(frenzy_per_berserk('fLDvVp8YqtkrHmdc', 11))

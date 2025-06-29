@@ -1,7 +1,8 @@
 import requests
-import common_utils.api as api
+from utils import api
+import argparse
 
-def fetch_events_data(
+def events_data(
     report_code,
     token,
     fight_ids=None,
@@ -177,7 +178,7 @@ def fetch_events_data(
     data = response.json()['data']['reportData']['report']['events']
     nextPageTimestamp = data.get('nextPageTimestamp')
     if nextPageTimestamp is not None:
-        nextPage_data = fetch_events_data(
+        nextPage_data = events_data(
             report_code,
             fight_ids=fight_ids,
             start=nextPageTimestamp,
@@ -212,7 +213,7 @@ def fetch_events_data(
         data['data'].extend(nextPage_data)
     return data['data']
 
-def fetch_fights_data(report_code, token):
+def fights_data(report_code, token):
     query = """
     query ($code: String!) {
       reportData {
@@ -234,7 +235,7 @@ def fetch_fights_data(report_code, token):
     data = response.json()
     return data['data']['reportData']['report']
 
-def get_spec_rankings(spec, _class, token):
+def spec_rankings(spec, _class, token):
     query = """
     query ($id: Int!, $specName: String, $className: String) {
       worldData {
@@ -256,3 +257,14 @@ def get_spec_rankings(spec, _class, token):
     response.raise_for_status()
     data = response.json()
     return data
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Fetch events data from a report.")
+    parser.add_argument("-r", "--report_code", type=str, required=True, help="The report code to fetch data for.")
+    parser.add_argument("-t", "--token", type=str, default=None, help="Access token for the API. If not provided, it will be fetched using the API client credentials.")
+    args = parser.parse_args()
+
+    token = api.get_access_token() if args.token is None else args.token
+
+    events_data = fights_data(args.report_code, token)
+    print(events_data)
