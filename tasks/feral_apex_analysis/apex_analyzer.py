@@ -1,9 +1,7 @@
 import requests
-import json
 import argparse
-import os
 
-import api
+import common_utils.api as api
 
 def fetch_events_data(report_code, fight_id, start, end, ability_id, event_type, token):
     query = """

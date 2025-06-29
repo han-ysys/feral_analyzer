@@ -1,4 +1,4 @@
-import api
+import common_utils.api as api
 import requests
 import json
 

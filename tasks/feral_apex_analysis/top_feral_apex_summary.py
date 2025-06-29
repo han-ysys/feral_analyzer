@@ -46,13 +46,17 @@ def fights_parser(encounters):
             })
             print(f"Processed fight: {fight_name}, Code: {fight_code}, Fight ID: {fight_id}, Region: {region}, Name: {name}, Apex Index: {apex_index:.2f}")
     return fights
-        
-if __name__ == "__main__":
+
+def save_apex_index_summary(file_path='data_json/top_feral_apex_summary.json'):
     top_feral_encounters = load_top_feral_apex_data()
     if top_feral_encounters:
         fights = fights_parser(top_feral_encounters)
-        with open('data_json/top_feral_apex_summary.json', 'w') as f:
+        with open(file_path, 'w') as f:
             json.dump(fights, f, indent=4)
         print("Top feral apex summary data saved to 'data_json/top_feral_apex_summary.json'.")
     else:
         print("No data available to process.")
+
+        
+if __name__ == "__main__":
+    save_apex_index_summary()
