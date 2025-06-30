@@ -15,3 +15,16 @@ def get_access_token():
     response = requests.post(TOKEN_URL, data=data)
     response.raise_for_status()
     return response.json()['access_token']
+
+def send_request(query, variables, token):
+    headers = {"Authorization": f"Bearer {token}"}
+    for retry in range(10):
+        try:
+            response = requests.post(API_URL, json={'query': query, 'variables': variables}, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {e}. Retrying ({retry + 1}/10)...")
+            if retry == 9:
+                raise
+    return None

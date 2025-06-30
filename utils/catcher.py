@@ -172,10 +172,8 @@ def events_data(
     # Remove None values to avoid sending them in the request
     variables = {k: v for k, v in variables.items() if v is not None}
 
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(api.API_URL, json={'query': query, 'variables': variables}, headers=headers)
-    response.raise_for_status()
-    data = response.json()['data']['reportData']['report']['events']
+    response = api.send_request(query, variables, token)
+    data = response['data']['reportData']['report']['events']
     nextPageTimestamp = data.get('nextPageTimestamp')
     if nextPageTimestamp is not None:
         nextPage_data = events_data(
@@ -229,10 +227,7 @@ def fights_data(report_code, token):
     }
     """
     variables = {"code": report_code}
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(api.API_URL, json={'query': query, 'variables': variables}, headers=headers)
-    response.raise_for_status()
-    data = response.json()
+    data = api.send_request(query, variables, token)
     return data['data']['reportData']['report']
 
 def spec_rankings(spec, _class, token):
@@ -252,10 +247,7 @@ def spec_rankings(spec, _class, token):
     }
     """
     variables = {"id": 43, "specName": spec, "className": _class}
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(api.API_URL, json={'query': query, 'variables': variables}, headers=headers)
-    response.raise_for_status()
-    data = response.json()
+    data = api.send_request(query, variables, token)
     return data
 
 def table_data(
@@ -384,11 +376,7 @@ def table_data(
     "wipeCutoff": wipe_cutoff
   }
   variables = {k: v for k, v in variables.items() if v is not None}
-
-  headers = {"Authorization": f"Bearer {token}"}
-  response = requests.post(api.API_URL, json={'query': query, 'variables': variables}, headers=headers)
-  response.raise_for_status()
-  data = response.json()
+  data = api.send_request(query, variables, token)
   return data['data']['reportData']['report']['table']
 
 if __name__ == "__main__":
