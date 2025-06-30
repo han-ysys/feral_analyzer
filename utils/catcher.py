@@ -258,6 +258,139 @@ def spec_rankings(spec, _class, token):
     data = response.json()
     return data
 
+def table_data(
+  report_code,
+  token,
+  ability_id=None,
+  data_type=None,
+  death=None,
+  difficulty=None,
+  encounter_id=None,
+  end=None,
+  fight_ids=None,
+  filter_expression=None,
+  hostility_type=None,
+  kill_type=None,
+  source_auras_absent=None,
+  source_auras_present=None,
+  source_class=None,
+  source_id=None,
+  source_instance_id=None,
+  start=None,
+  target_auras_absent=None,
+  target_auras_present=None,
+  target_class=None,
+  target_id=None,
+  target_instance_id=None,
+  translate=None,
+  view_options=None,
+  view_by=None,
+  wipe_cutoff=None
+):
+  """
+  Fetches table data for a report, filterable via various arguments.
+
+  See function docstring for argument details.
+  """
+  query = """
+  query (
+    $code: String!,
+    $abilityID: Float,
+    $dataType: TableDataType,
+    $death: Int,
+    $difficulty: Int,
+    $encounterID: Int,
+    $endTime: Float,
+    $fightIDs: [Int],
+    $filterExpression: String,
+    $hostilityType: HostilityType,
+    $killType: KillType,
+    $sourceAurasAbsent: String,
+    $sourceAurasPresent: String,
+    $sourceClass: String,
+    $sourceID: Int,
+    $sourceInstanceID: Int,
+    $startTime: Float,
+    $targetAurasAbsent: String,
+    $targetAurasPresent: String,
+    $targetClass: String,
+    $targetID: Int,
+    $targetInstanceID: Int,
+    $translate: Boolean,
+    $viewOptions: Int,
+    $viewBy: ViewType,
+    $wipeCutoff: Int
+  ) {
+    reportData {
+    report(code: $code) {
+      table(
+      abilityID: $abilityID,
+      dataType: $dataType,
+      death: $death,
+      difficulty: $difficulty,
+      encounterID: $encounterID,
+      endTime: $endTime,
+      fightIDs: $fightIDs,
+      filterExpression: $filterExpression,
+      hostilityType: $hostilityType,
+      killType: $killType,
+      sourceAurasAbsent: $sourceAurasAbsent,
+      sourceAurasPresent: $sourceAurasPresent,
+      sourceClass: $sourceClass,
+      sourceID: $sourceID,
+      sourceInstanceID: $sourceInstanceID,
+      startTime: $startTime,
+      targetAurasAbsent: $targetAurasAbsent,
+      targetAurasPresent: $targetAurasPresent,
+      targetClass: $targetClass,
+      targetID: $targetID,
+      targetInstanceID: $targetInstanceID,
+      translate: $translate,
+      viewOptions: $viewOptions,
+      viewBy: $viewBy,
+      wipeCutoff: $wipeCutoff
+      )
+    }
+    }
+  }
+  """
+
+  variables = {
+    "code": report_code,
+    "abilityID": ability_id,
+    "dataType": data_type,
+    "death": death,
+    "difficulty": difficulty,
+    "encounterID": encounter_id,
+    "endTime": end,
+    "fightIDs": fight_ids,
+    "filterExpression": filter_expression,
+    "hostilityType": hostility_type,
+    "killType": kill_type,
+    "sourceAurasAbsent": source_auras_absent,
+    "sourceAurasPresent": source_auras_present,
+    "sourceClass": source_class,
+    "sourceID": source_id,
+    "sourceInstanceID": source_instance_id,
+    "startTime": start,
+    "targetAurasAbsent": target_auras_absent,
+    "targetAurasPresent": target_auras_present,
+    "targetClass": target_class,
+    "targetID": target_id,
+    "targetInstanceID": target_instance_id,
+    "translate": translate,
+    "viewOptions": view_options,
+    "viewBy": view_by,
+    "wipeCutoff": wipe_cutoff
+  }
+  variables = {k: v for k, v in variables.items() if v is not None}
+
+  headers = {"Authorization": f"Bearer {token}"}
+  response = requests.post(api.API_URL, json={'query': query, 'variables': variables}, headers=headers)
+  response.raise_for_status()
+  data = response.json()
+  return data['data']['reportData']['report']['table']
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch events data from a report.")
     parser.add_argument("-r", "--report_code", type=str, required=True, help="The report code to fetch data for.")

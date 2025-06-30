@@ -1,4 +1,5 @@
 import json
+from tqdm import tqdm
 
 def load_top_feral_apex_data(file_path='data_json/top_ferals.json'):
     """
@@ -29,17 +30,18 @@ def fights_parser(encounters, extra_info=None):
     fights = []
     for encounter in encounters:
         fight_name = encounter['name']
-        for player in encounter['characterRankings']['rankings']:
+        rankings = encounter['characterRankings']['rankings']
+        for player in tqdm(rankings, desc=f"Parsing {fight_name}", leave=False):
             fight_code = player['report']['code']
             fight_id = player['report']['fightID']
             region = player['server']['region']
             name = player['name']
             fight_entry = {
-                'fight_name': fight_name,
-                'report_code': fight_code,
-                'region': region,
-                'name': name,
-                'fight': fight_id
+            'fight_name': fight_name,
+            'report_code': fight_code,
+            'region': region,
+            'name': name,
+            'fight': fight_id
             }
             if extra_info:
                 key = extra_info.get('key')
@@ -50,5 +52,4 @@ def fights_parser(encounters, extra_info=None):
                     value = None
                 fight_entry[key] = value
             fights.append(fight_entry)
-            print(f"Processed fight: {fight_name}, Code: {fight_code}, Fight ID: {fight_id}, Region: {region}, Name: {name}")
     return fights

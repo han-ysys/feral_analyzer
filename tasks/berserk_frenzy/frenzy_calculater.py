@@ -6,6 +6,7 @@ token = api.get_access_token()
 
 home_dir = os.getenv("CURRENT_DIR", os.path.expanduser("~"))
 
+
 def load_top_feral_apex_data(file_path=f'{home_dir}/data_json/top_ferals.json'):
     """
     Load the top feral apex data from a JSON file.
@@ -71,7 +72,38 @@ def frenzy_per_berserk(report_code, fight_id):
         return accumulated_frenzy_damage / berserk_amount
     else:
         return 0.0
+    
+def frenzy_per_berserk_from_table(report_code, fight_id):
+    """
+    Calculate frenzy per berserk from a table of fights.
+    
+    :param report_code: The report code of the fight.
+    :param fight_id: The ID of the fight.
+    :return: Frenzy per berserk value.
+    """
+    frenzy = catcher.table_data(
+        report_code=report_code,
+        fight_ids=fight_id,
+        ability_id=391140,  # Frenzy ability ID
+        data_type='DamageDone',
+        token=token
+        )
+    frenzy_sum = sum(
+        entry['hitdetails'][0]['total'] for entry in frenzy.get('data', {}).get('entries', [])
+    ) if frenzy.get('data', {}).get('entries', []) else 0
+    berserk = catcher.table_data(
+        report_code=report_code,
+        fight_ids=fight_id,
+        ability_id=106951,  # Berserk ability ID
+        data_type='Buffs',
+        token=token
+        )
+    auras = berserk.get('data', {}).get('auras', [])
+    berserk_amount = sum(
+        aura['totalUses'] for aura in auras
+    ) if auras else 0
+    return frenzy_sum / berserk_amount if berserk_amount > 0 else 0.0
 
 if __name__ == "__main__":
     # test
-    print(frenzy_per_berserk('fLDvVp8YqtkrHmdc', 11))
+    frenzy_per_berserk_from_table('fLDvVp8YqtkrHmdc', 11)
