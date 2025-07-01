@@ -1,4 +1,3 @@
-import requests
 from utils import api
 import argparse
 
