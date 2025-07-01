@@ -1,9 +1,9 @@
 from utils import api
 import argparse
+import json
 
 def events_data(
     report_code,
-    token,
     fight_ids=None,
     start=None,
     end=None,
@@ -171,7 +171,8 @@ def events_data(
     # Remove None values to avoid sending them in the request
     variables = {k: v for k, v in variables.items() if v is not None}
 
-    response = api.send_request(query, variables, token)
+    response = api.send_request(query, variables)
+    print(response)
     data = response['data']['reportData']['report']['events']
     nextPageTimestamp = data.get('nextPageTimestamp')
     if nextPageTimestamp is not None:
@@ -182,7 +183,6 @@ def events_data(
             end=end,
             ability_id=ability_id,
             event_type=event_type,
-            token=token,
             death=death,
             difficulty=difficulty,
             encounter_id=encounter_id,
@@ -210,7 +210,7 @@ def events_data(
         data['data'].extend(nextPage_data)
     return data['data']
 
-def fights_data(report_code, token):
+def fights_data(report_code):
     query = """
     query ($code: String!) {
       reportData {
@@ -226,10 +226,10 @@ def fights_data(report_code, token):
     }
     """
     variables = {"code": report_code}
-    data = api.send_request(query, variables, token)
+    data = api.send_request(query, variables)
     return data['data']['reportData']['report']
 
-def spec_rankings(spec, _class, token):
+def spec_rankings(spec, _class):
     query = """
     query ($id: Int!, $specName: String, $className: String) {
       worldData {
@@ -246,12 +246,11 @@ def spec_rankings(spec, _class, token):
     }
     """
     variables = {"id": 43, "specName": spec, "className": _class}
-    data = api.send_request(query, variables, token)
+    data = api.send_request(query, variables)
     return data
 
 def table_data(
   report_code,
-  token,
   ability_id=None,
   data_type=None,
   death=None,
@@ -375,16 +374,29 @@ def table_data(
     "wipeCutoff": wipe_cutoff
   }
   variables = {k: v for k, v in variables.items() if v is not None}
-  data = api.send_request(query, variables, token)
+  data = api.send_request(query, variables)
   return data['data']['reportData']['report']['table']
 
+def player_data(report_code, fight_ids):
+    query = """
+    query ($code: String!, $fightIDs: [Int]!) {
+      reportData {
+        report(code: $code) {
+          playerDetails(fightIDs: $fightIDs, includeCombatantInfo: true)
+        }
+      }
+    }
+    """
+    variables = {"code": report_code, "fightIDs": fight_ids}
+    data = api.send_request(query, variables)
+    return data['data']['reportData']['report']['playerDetails']['data']['playerDetails']
+
 if __name__ == "__main__":
+    # Example usage of the player_data function
     parser = argparse.ArgumentParser(description="Fetch events data from a report.")
     parser.add_argument("-r", "--report_code", type=str, required=True, help="The report code to fetch data for.")
-    parser.add_argument("-t", "--token", type=str, default=None, help="Access token for the API. If not provided, it will be fetched using the API client credentials.")
     args = parser.parse_args()
 
-    token = api.get_access_token() if args.token is None else args.token
-
-    events_data = fights_data(args.report_code, token)
-    print(events_data)
+    with open('data_json/player_data_test.json', 'w') as f:
+        data = player_data(args.report_code, [11])
+        json.dump(data, f, indent=4)

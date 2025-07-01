@@ -14,9 +14,9 @@ Measures the efficiency of the Apex Predator talent by calculating the in-game t
 
 # Comparison analysis for feral druid logs **with normalized data**
 
-## Bloodtalon coverage
+## Snapshot quality
 
-Coverage for finishers and Bloodtalon procs.
+Finishers and rake snapshot.
 
 ## Berserk quality
 

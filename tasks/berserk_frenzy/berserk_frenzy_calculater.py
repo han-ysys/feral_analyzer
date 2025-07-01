@@ -1,8 +1,6 @@
 import json
 import os
-from utils import catcher, api
-
-token = api.get_access_token()
+from utils import catcher
 
 home_dir = os.getenv("CURRENT_DIR", os.path.expanduser("~"))
 
@@ -38,8 +36,7 @@ def frenzy_calculaor(report_code, fight_ids):
         report_code=report_code,
         fight_ids=fight_ids,
         ability_id=391140,  # Frenzy ability ID
-        event_type='DamageDone',
-        token=token
+        event_type='DamageDone'
         )
     total_frenzy_damage = sum(event['amount'] for event in events if 'amount' in event)
     return total_frenzy_damage
@@ -56,8 +53,7 @@ def berserk_calculator(report_code, fight_ids):
         report_code=report_code,
         fight_ids=fight_ids,
         ability_id=106951,  # Berserk ability ID
-        event_type='Buffs',
-        token=token
+        event_type='Buffs'
         )
     cast_amount = sum(
             1 for event in events
@@ -85,8 +81,7 @@ def frenzy_per_berserk_from_table(report_code, fight_id):
         report_code=report_code,
         fight_ids=fight_id,
         ability_id=391140,  # Frenzy ability ID
-        data_type='DamageDone',
-        token=token
+        data_type='DamageDone'
         )
     frenzy_sum = sum(
         entry['hitdetails'][0]['total'] for entry in frenzy.get('data', {}).get('entries', [])
@@ -95,14 +90,15 @@ def frenzy_per_berserk_from_table(report_code, fight_id):
         report_code=report_code,
         fight_ids=fight_id,
         ability_id=106951,  # Berserk ability ID
-        data_type='Buffs',
-        token=token
+        data_type='Buffs'
         )
     auras = berserk.get('data', {}).get('auras', [])
     berserk_amount = sum(
         aura['totalUses'] for aura in auras
     ) if auras else 0
     return frenzy_sum / berserk_amount if berserk_amount > 0 else 0.0
+
+# todo: damage per berserk
 
 if __name__ == "__main__":
     # test
