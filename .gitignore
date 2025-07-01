@@ -1,3 +1,4 @@
 .profile
 data_json
 **/__pycache__/
+.DS_store
