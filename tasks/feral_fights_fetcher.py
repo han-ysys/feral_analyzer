@@ -1,5 +1,4 @@
-import common_utils.api as api
-import requests
+import utils.api as api
 import json
 
 token = api.get_access_token()
@@ -20,11 +19,13 @@ def get_spec_rankings(spec, _class):
       }
     }
     """
-    variables = {"id": 43, "specName": spec, "className": _class}
+    variables = {
+      "id": 43, # TWW season 2
+      "specName": spec, 
+      "className": _class
+    }
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(api.API_URL, json={'query': query, 'variables': variables}, headers=headers)
-    response.raise_for_status()
-    data = response.json()
+    data = api.send_request(data, query, variables, headers)
     return data
 
 def main():
