@@ -28,6 +28,7 @@ def bloodtalon_coverage(report_code, fight_ids):
             json.dump(data, f, indent=4)
 
 if __name__ == "__main__":
+    # function test
     import argparse
 
     parser = argparse.ArgumentParser(description="Calculate Bloodtalon coverage.")

@@ -1,8 +1,6 @@
 import utils.api as api
 import json
 
-token = api.get_access_token()
-
 def get_spec_rankings(spec, _class):
     query = """
     query ($id: Int!, $specName: String, $className: String) {
@@ -24,8 +22,7 @@ def get_spec_rankings(spec, _class):
       "specName": spec, 
       "className": _class
     }
-    headers = {"Authorization": f"Bearer {token}"}
-    data = api.send_request(data, query, variables, headers)
+    data = api.send_request(query, variables)
     return data
 
 def main():
@@ -34,7 +31,7 @@ def main():
         with open('data_json/top_ferals.json', 'w') as f:
             json.dump(result, f, indent=4)
     except Exception as e:
-        print(f"Error fetching dungeons: {e}")
+        print(f"Error fetching ranking: {e}")
 
 if __name__ == "__main__":
     main()

@@ -398,5 +398,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with open('data_json/player_data_test.json', 'w') as f:
-        data = player_data(args.report_code, [11])
+        data = player_data(args.report_code, [5])
         json.dump(data, f, indent=4)
