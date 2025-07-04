@@ -6,5 +6,5 @@ class Player:
         self.region = json['region']
         self.combatantInfo = json['combatantInfo']
         
-    def isFeral(self):
-        return self.spec == 'Feral'
+    def isSpec(self, spec):
+        return self.spec == spec
