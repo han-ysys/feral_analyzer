@@ -220,6 +220,9 @@ def fights_data(report_code):
             startTime
             endTime
             kill
+            gameZone {
+              name
+            }
           }
         }
       }

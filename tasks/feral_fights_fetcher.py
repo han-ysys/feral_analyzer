@@ -1,5 +1,6 @@
 import utils.api as api
 import json
+import time
 
 def get_spec_rankings(spec, _class):
     query = """
@@ -28,7 +29,8 @@ def get_spec_rankings(spec, _class):
 def main():
     try:
         result = get_spec_rankings('Feral', 'Druid')
-        with open('data_json/top_ferals.json', 'w') as f:
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        with open(f'data_json/top_ferals_{timestamp}.json', 'w') as f:
             json.dump(result, f, indent=4)
     except Exception as e:
         print(f"Error fetching ranking: {e}")
