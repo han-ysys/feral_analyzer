@@ -21,7 +21,6 @@ class Normalization:
                     self.mastery = player.combatantInfo['stats']['Mastery']
                 if player.isClass('Shaman'):
                     self.skyfury = 1
-        self.dmg()
         
     def dmg(self):
         table_data = catcher.table_data(self.code, fight_ids=self.ids, source_id=self.source_id, data_type='DamageDone')
@@ -35,32 +34,12 @@ class Normalization:
             entry['total'] for entry in table_data['data']['entries']
             ) if table_data.get('data', {}).get('entries', []) else 0
         self.overall_dps = self.overall_dmg / (table_data['data']['totalTime'] / 1000) if table_data['data']['totalTime'] > 0 else 0
-        
-def normalization_index_regression(normalizations):
-    h_array = []
-    i_array = []
-    j_array = []
-    y_array = []
-    for instance in normalizations:
-        h_array.append(list(instance['aa_data'].values())[0])
-        i_array.append(instance['mastery']['min'])
-        j_array.append(instance['skyfury'])
-        y_array.append(instance['overall_dps'])
-    h = np.array(h_array)
-    i = np.array(i_array)
-    j = np.array(j_array)
-    X = np.column_stack((h, i, j))
-    y = np.array(y_array)
-    model = LinearRegression()
-    model.fit(X, y)
-    print("Intercept:", model.intercept_)
-    print("Coefficient for melee:", model.coef_[0])
-    print("Coefficient for mastery:", model.coef_[1])
-    print("Coefficient for skyfury:", model.coef_[2])
+
+def regression_plot(h,i,j,y, instance, model):
     # 3D scatter plot for the first two features and y
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(h, i, y, c='b', marker='o', label='Actual Data')
+    ax.scatter(h,i,y, c='b', marker='o', label='Actual Data')
     # Regression plane
     h_surf, i_surf = np.meshgrid(
         np.linspace(h.min(), h.max(), 10),
@@ -85,8 +64,29 @@ def normalization_index_regression(normalizations):
     plt.title('Regression Diagram (Skyfury fixed at mean)')
     plt.legend()
     plt.show()
-
-    return model
+        
+def normalization_index_regression(normalizations):
+    h_array = []
+    i_array = []
+    j_array = []
+    y_array = []
+    for instance in normalizations:
+        h_array.append(list(instance['aa_data'].values())[0])
+        i_array.append(instance['mastery']['min'])
+        j_array.append(instance['skyfury'])
+        y_array.append(instance['overall_dps'])
+    h = np.array(h_array)
+    i = np.array(i_array)
+    j = np.array(j_array)
+    X = np.column_stack((h, i, j))
+    y = np.array(y_array)
+    model = LinearRegression()
+    model.fit(X, y)
+    print("Intercept:", model.intercept_)
+    print("Coefficient for melee:", model.coef_[0])
+    print("Coefficient for mastery:", model.coef_[1])
+    print("Coefficient for skyfury:", model.coef_[2])
+    return h,i,j,y, model
 
 def check_model(code, fight_id, threshold=100, normalization_file='data_json/normalization.json'):
     instance = Normalization(code, fight_id)
@@ -106,8 +106,9 @@ def check_model(code, fight_id, threshold=100, normalization_file='data_json/nor
                 fight += 1
                 if fight >= threshold:
                     break
-        model = normalization_index_regression(normalizations)
+        h,i,j,y, model = normalization_index_regression(normalizations)
     instance.dmg()
+    regression_plot(h,i,j,y, instance, model)
     prediction = model.predict(np.array([[instance.aa_data['avg'], instance.mastery['min'], instance.skyfury]]))
 
     print("Predicted overall dps:", prediction[0])
@@ -139,7 +140,7 @@ def fetch_normalize_data():
         with open(f'data_json/normalization.json', 'w') as f:
             json.dump(normalizations, f, indent=4)
 
-@Gooey(program_name="Feral DPS Normalizer", default_size=(800, 600))
+# @Gooey(program_name="Feral DPS Normalizer", default_size=(800, 600))
 def main():
     parser = argparse.ArgumentParser(description='Normalization Analysis')
     parser.add_argument('-c', '--code', type=str, required=True, help='Code for the fight')
