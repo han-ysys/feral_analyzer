@@ -172,7 +172,7 @@ def events_data(
     variables = {k: v for k, v in variables.items() if v is not None}
 
     response = api.send_request(query, variables)
-    print(response)
+    # print(response)
     data = response['data']['reportData']['report']['events']
     nextPageTimestamp = data.get('nextPageTimestamp')
     if nextPageTimestamp is not None:

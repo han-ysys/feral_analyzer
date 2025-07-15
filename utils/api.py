@@ -18,6 +18,7 @@ def get_access_token():
 
 def send_request(query, variables):
     headers = {"Authorization": f"Bearer {get_access_token()}"}
+    # print(f"Sending request to {API_URL} with query: {query} and variables: {variables}")
     for retry in range(10):
         try:
             response = requests.post(API_URL, json={'query': query, 'variables': variables}, headers=headers)
