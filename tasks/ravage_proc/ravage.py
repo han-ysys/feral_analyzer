@@ -36,18 +36,17 @@ def ravage_counter(code, fight_id):
     berserk_count = len(list(filter(lambda x: x['type'] == 'applybuff', catcher.events_data(report_code=code, fight_ids=fight_id, source_id=source_info['source_id'], event_type='Buffs', ability_id=106951))))
     with open('data_json/table_data.json', 'w') as f:
         json.dump(table_data, f, indent=4)
-    aa_table_data = next((entry for entry in table_data['data']['entries'] if entry.get('guid') == 1), None)
+    aa_data = aa_details(code, fight_id, source_id=source_info['source_id'])
     ravage_table_data = next((entry for entry in table_data['data']['entries'] if entry.get('guid') == 441591), None)
-    if aa_table_data is None or ravage_table_data is None:
+    if aa_data is None or ravage_table_data is None:
         raise ValueError("No entry with guid == 1 or spellId == 441591 found in table_data['data']['entries']")
     ravage_casts = ravage_table_data['uses'] - berserk_count * 3  # Subtract berserk casts
-    aa_casts = aa_table_data['uses']
 
     return {
         'skyfury': source_info['skyfury'],
         'ravage_casts': ravage_casts,
-        'aa_casts': aa_casts,
-        'ravage_proc_index': ravage_casts / aa_casts if aa_casts > 0 else 0,
+        'aa_data': aa_data,
+        'ravage_proc_index': ravage_casts / aa_data['clean_aa'] if aa_data['clean_aa'] > 0 else 0,
     }
 
 def fetch_data(input_path='data_json/top_ferals_20250710_135015.json', output_path='data_json/ravage_proc_100.json', top=100):
@@ -80,7 +79,7 @@ def proc_analysis(file='data_json/ravage_proc.json'):
     for entry in data:
         ravage_procs.append(entry['ravage_counter']['ravage_proc_index'])
         ravage_count.append(entry['ravage_counter']['ravage_casts'])
-        aa_count.append(entry['ravage_counter']['aa_casts'])
+        aa_count.append(entry['ravage_counter']['aa_data']['clean_aa'])
         skyfury.append(entry['ravage_counter']['skyfury'])
 
     # Analyze if skyfury contributes significantly to ravage_procs
@@ -121,7 +120,7 @@ def proc_analysis(file='data_json/ravage_proc.json'):
     plt.tight_layout()
     plt.show()
     
-def aa_data(code, fight_id, source_id=None):
+def aa_details(code, fight_id, source_id=None):
     """
     Fetch the AA data for a specific fight and player.
 
@@ -154,7 +153,23 @@ def aa_data(code, fight_id, source_id=None):
         'double_attack_rate': double_attack / total_aa if total_aa > 0 else 0,
         'clean_aa': total_aa - double_attack,
     }
+
         
+def ravage_details(code, fight_id, source_id=None):
+    # if source_id is None:
+    #     players = catcher.player_data(code, fight_id)
+    #     source_info = check_player(players)
+    #     source_id = source_info['source_id']
+    # data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='Buffs', ability_id=441585)
+    # if not data:
+    #     raise ValueError("No Ravage data found for the specified fight and player.")
+    # berserk_data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='Buffs', ability_id=106951)
+    # berserk_duartion = []
+    # for entry in berserk_data:
+    #     if entry['type'] == 'applybuff':
+    #         berserk_duartion.append(entry['duration'])
+    # todo
+    return
 
 def test_ravage(code, fight_id, source_id=None):
     """
@@ -164,14 +179,15 @@ def test_ravage(code, fight_id, source_id=None):
     :param fight_id: The ID of the fight to analyze.
     :return: The result of the ravage counter function.
     """
-    data = catcher.events_data(report_code=code, fight_ids=fight_id, source_id=source_id, event_type='Buffs', ability_id=106951)
-    print(len(list(filter(lambda x: x['type'] == 'applybuff', data))))
-    with open('data_json/buff_data.json', 'w') as f:
+    # data = catcher.table_data(code, fight_ids=fight_id, source_id=source_id, data_type='DamageDone')
+    data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='DamageDone', ability_id=1)
+    print(len(list(data)))
+    with open('data_json/aa_data.json', 'w') as f:
         json.dump(data, f, indent=4)
 
 if __name__ == "__main__":
     if not os.path.exists('data_json/ravage_proc_100.json'):
-        fetch_data(output_path='data_json/ravage_proc_100.json',top=100)
+        fetch_data(input_path='data_json/top_ferals_20250711_103147.json',output_path='data_json/ravage_proc_100.json',top=100)
     proc_analysis(file='data_json/ravage_proc_100.json')
     # players = catcher.player_data('MF9fWYLPD2KRvpma', 5)
     # for role in ['tanks', 'healers', 'dps']:

@@ -172,8 +172,11 @@ def events_data(
     variables = {k: v for k, v in variables.items() if v is not None}
 
     response = api.send_request(query, variables)
-    # print(response)
-    data = response['data']['reportData']['report']['events']
+    try:
+      data = response['data']['reportData']['report']['events']
+    except KeyError:
+        print("Error: Unexpected response structure")
+        print(response)
     nextPageTimestamp = data.get('nextPageTimestamp')
     if nextPageTimestamp is not None:
         nextPage_data = events_data(
