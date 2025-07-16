@@ -120,6 +120,41 @@ def proc_analysis(file='data_json/ravage_proc.json'):
     ax.set_title('Ravage Proc Index by Skyfury Presence')
     plt.tight_layout()
     plt.show()
+    
+def aa_data(code, fight_id, source_id=None):
+    """
+    Fetch the AA data for a specific fight and player.
+
+    Args:
+        code (str): The code to identify the player or instance.
+        fight_id (int): The ID of the fight to analyze.
+        source_id (str, optional): The ID of the player. If None, it will be determined from player data.
+
+    Returns:
+        dict: The AA data for the specified fight and player.
+    """
+    if source_id is None:
+        players = catcher.player_data(code, fight_id)
+        source_info = check_player(players)
+        source_id = source_info['source_id']
+    
+    data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='DamageDone', ability_id=1)
+    # Compare each AA event against its adjacent events
+    data = list(data)  # Ensure it's a list for indexing
+    double_attack = 0
+    total_aa = len(data)
+    for i, aa in enumerate(data):
+        if i > 0 and i < total_aa - 1:
+            prev_aa = data[i - 1]
+            if aa['timestamp'] - prev_aa['timestamp'] < 150:
+                double_attack += 1
+    return {
+        'double_attack': double_attack,
+        'total_aa': total_aa,
+        'double_attack_rate': double_attack / total_aa if total_aa > 0 else 0,
+        'clean_aa': total_aa - double_attack,
+    }
+        
 
 def test_ravage(code, fight_id, source_id=None):
     """
