@@ -33,20 +33,21 @@ def ravage_counter(code, fight_id):
     players = catcher.player_data(code, fight_id)
     source_info = check_player(players)
     table_data = catcher.table_data(code, fight_ids=fight_id, source_id=source_info['source_id'], data_type='DamageDone')
-    berserk_count = len(list(filter(lambda x: x['type'] == 'applybuff', catcher.events_data(report_code=code, fight_ids=fight_id, source_id=source_info['source_id'], event_type='Buffs', ability_id=106951))))
+    # berserk_count = len(list(filter(lambda x: x['type'] == 'applybuff', catcher.events_data(report_code=code, fight_ids=fight_id, source_id=source_info['source_id'], event_type='Buffs', ability_id=106951))))
     with open('data_json/table_data.json', 'w') as f:
         json.dump(table_data, f, indent=4)
     aa_data = aa_details(code, fight_id, source_id=source_info['source_id'])
-    ravage_table_data = next((entry for entry in table_data['data']['entries'] if entry.get('guid') == 441591), None)
-    if aa_data is None or ravage_table_data is None:
+    ravage_data = ravage_filter(code, fight_id, aa_data['raw'])
+    # ravage_table_data = next((entry for entry in table_data['data']['entries'] if entry.get('guid') == 441591), None)
+    if aa_data is None or ravage_data is None:
         raise ValueError("No entry with guid == 1 or spellId == 441591 found in table_data['data']['entries']")
-    ravage_casts = ravage_table_data['uses'] - berserk_count * 3  # Subtract berserk casts
+    ravage_casts = len(ravage_data)
 
     return {
         'skyfury': source_info['skyfury'],
         'ravage_casts': ravage_casts,
-        'aa_data': aa_data,
-        'ravage_proc_index': ravage_casts / aa_data['clean_aa'] if aa_data['clean_aa'] > 0 else 0,
+        'aa_data': aa_data['details'],
+        'ravage_proc_index': ravage_casts / aa_data['details']['clean_aa'] if aa_data['details']['clean_aa'] > 0 else 0,
     }
 
 def fetch_data(input_path='data_json/top_ferals_20250710_135015.json', output_path='data_json/ravage_proc_100.json', top=100):
@@ -148,28 +149,29 @@ def aa_details(code, fight_id, source_id=None):
             if aa['timestamp'] - prev_aa['timestamp'] < 150:
                 double_attack += 1
     return {
-        'double_attack': double_attack,
-        'total_aa': total_aa,
-        'double_attack_rate': double_attack / total_aa if total_aa > 0 else 0,
-        'clean_aa': total_aa - double_attack,
+        'raw': data,
+        'details': {
+            'double_attack': double_attack,
+            'total_aa': total_aa,
+            'double_attack_rate': double_attack / total_aa if total_aa > 0 else 0,
+            'clean_aa': total_aa - double_attack,
+        }
     }
 
         
-def ravage_details(code, fight_id, source_id=None):
-    # if source_id is None:
-    #     players = catcher.player_data(code, fight_id)
-    #     source_info = check_player(players)
-    #     source_id = source_info['source_id']
-    # data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='Buffs', ability_id=441585)
-    # if not data:
-    #     raise ValueError("No Ravage data found for the specified fight and player.")
-    # berserk_data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='Buffs', ability_id=106951)
-    # berserk_duartion = []
-    # for entry in berserk_data:
-    #     if entry['type'] == 'applybuff':
-    #         berserk_duartion.append(entry['duration'])
-    # todo
-    return
+def ravage_filter(code, fight_id, aa_data, source_id=None):
+    if source_id is None:
+        players = catcher.player_data(code, fight_id)
+        source_info = check_player(players)
+        source_id = source_info['source_id']
+    data = catcher.events_data(report_code=code, fight_ids=[fight_id], source_id=source_id, event_type='Buffs', ability_id=441585)
+    applies = filter(lambda x: x['type'] == 'applybuff', data)
+    aa_induced_ravage = []
+    for apply in applies:
+        timestamp = apply['timestamp']
+        any(True for aa in aa_data if abs(aa['timestamp'] - timestamp) < 30)
+        aa_induced_ravage.append(apply)
+    return aa_induced_ravage
 
 def test_ravage(code, fight_id, source_id=None):
     """
@@ -187,7 +189,7 @@ def test_ravage(code, fight_id, source_id=None):
 
 if __name__ == "__main__":
     if not os.path.exists('data_json/ravage_proc_100.json'):
-        fetch_data(input_path='data_json/top_ferals_20250711_103147.json',output_path='data_json/ravage_proc_100.json',top=100)
+        fetch_data(input_path='data_json/top_ferals_20250710_135015.json',output_path='data_json/ravage_proc_100.json',top=100)
     proc_analysis(file='data_json/ravage_proc_100.json')
     # players = catcher.player_data('MF9fWYLPD2KRvpma', 5)
     # for role in ['tanks', 'healers', 'dps']:
